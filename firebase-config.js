@@ -3,7 +3,7 @@
  * Console Firebase → Configurações do projeto (engrenagem) → Seus apps → app Web (</>)
  * → copie o objeto "firebaseConfig" e cole os valores abaixo.
  */
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyCgDDhY_HmBZGZDT8ajX0lQ4xlAVbrt23w",
   authDomain: "manmade-946e2.firebaseapp.com",
   projectId: "manmade-946e2",
