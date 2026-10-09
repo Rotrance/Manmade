@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Login — ManMade Studios." />
+  <title>Entrar</title>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="stylesheet" href="auth.css" />
+</head>
+
+<body>
+
+  <main class="auth">
+
+    <a href="index.html" class="auth__back" aria-label="Voltar">
+      <img src="voltar.png" alt="" />
+    </a>
+
+    <div class="auth__background" aria-hidden="true"></div>
+    <div class="auth__overlay" aria-hidden="true"></div>
+
+    <section class="auth__content">
+      <div class="auth__card">
+
+        <div class="auth__header">
+          <span class="auth__kicker">BEM-VINDO DE VOLTA</span>
+          <h1>Entrar</h1>
+          <p>Entre na sua conta para continuar sua jornada.</p>
+        </div>
+
+        <form class="auth__form" data-auth="login" novalidate>
+
+          <p id="mensagem" class="auth__message" role="alert" hidden></p>
+
+          <div class="form-group">
+            <label for="email">E-mail</label>
+            <input type="email" id="email" name="email" placeholder="Digite seu e-mail" autocomplete="email" required />
+          </div>
+
+          <div class="form-group">
+            <label for="senha">Senha</label>
+            <input type="password" id="senha" name="senha" placeholder="Digite sua senha" autocomplete="current-password" required />
+          </div>
+
+          <div class="auth__options">
+            <label class="checkbox">
+              <input type="checkbox" name="lembrar" />
+              <span>Lembrar de mim</span>
+            </label>
+            <a href="#" data-forgot>Esqueceu a senha?</a>
+          </div>
+
+          <button type="submit" class="auth__button btn btn--filled">Entrar</button>
+        </form>
+
+        <div class="auth__footer">
+          <span>Ainda não possui uma conta?</span>
+          <a href="cadastro.html">Cadastrar</a>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  
+  <script type="module" src="auth-pages.js"></script>
+</body>
+</html>
