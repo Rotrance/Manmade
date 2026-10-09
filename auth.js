@@ -27,9 +27,16 @@ let auth = null;
 let db = null;
 
 if (isConfigured) {
-  const app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = getFirestore(app);
+  try {
+    const app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+  } catch (err) {
+    // Chave inválida etc.: o site continua abrindo, só o login fica indisponível.
+    console.error("Falha ao iniciar o Firebase. Confira os valores em firebase-config.js:", err);
+    auth = null;
+    db = null;
+  }
 }
 
 /* ---------- erros em português ---------- */
@@ -61,8 +68,12 @@ function friendly(err) {
 }
 
 function requireConfigured() {
-  if (!isConfigured) {
-    const e = new Error("Firebase ainda não configurado. Preencha firebase-config.js.");
+  if (!auth) {
+    const e = new Error(
+      isConfigured
+        ? "Não foi possível iniciar o Firebase. Confira os valores em firebase-config.js (veja o console, F12)."
+        : "Firebase ainda não configurado. Preencha firebase-config.js."
+    );
     e.code = "app/not-configured";
     throw e;
   }
@@ -72,7 +83,7 @@ function requireConfigured() {
 
 // Chama callback(user|null) agora e a cada login/logout. Retorna função para parar de ouvir.
 export function onUser(callback) {
-  if (!isConfigured) {
+  if (!auth) {
     queueMicrotask(() => callback(null));
     return () => {};
   }
