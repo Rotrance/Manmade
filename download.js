@@ -11,7 +11,7 @@ const HOME = "index.html";
 const LOGIN = "login.html?next=download";
 // Nomes aceitos para o arquivo do jogo, na pasta do site. O primeiro que existir é usado.
 const PREFIX = "";
-const ARQUIVOS = ["ManMade-v1.0.zip.rar", "ManMade-v1.0.rar", "ManMade-v1.0.zip", "ManMade.rar", "ManMade.zip"];
+const ARQUIVOS = ["Manmade.rar", "ManMade-v1.0.zip.rar", "ManMade-v1.0.rar", "ManMade-v1.0.zip", "ManMade.rar", "ManMade.zip"];
 
 const content = document.getElementById("conteudo");
 let shown = false;
