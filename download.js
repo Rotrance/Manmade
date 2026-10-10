@@ -9,7 +9,7 @@ import { onUser, logout, userName, getDownloadUrl } from "./auth.js";
 
 const HOME = "index.html";
 const LOGIN = "login.html?next=download";
-const DOWNLOAD_URL = ""; // plano B (ex.: "https://.../ManMade.zip")
+const DOWNLOAD_URL = "ManMade-v1.0.zip"; // arquivo hospedado junto com o site (mesma pasta do projeto)
 
 const content = document.getElementById("conteudo");
 let shown = false;
@@ -46,6 +46,20 @@ function render(user) {
       info.hidden = false;
       return;
     }
+
+    // Arquivo do próprio site: confirma que ele existe antes de baixar
+    // (senão o navegador baixaria uma página de erro 404 no lugar do jogo).
+    if (!/^https?:\/\//.test(url)) {
+      try {
+        const res = await fetch(url, { method: "HEAD", cache: "no-store" });
+        if (!res.ok) throw new Error("HTTP " + res.status);
+      } catch (err) {
+        info.textContent = "O arquivo do jogo ainda não foi publicado. Volte em breve!";
+        info.hidden = false;
+        return;
+      }
+    }
+
     const a = document.createElement("a");
     a.href = url;
     a.download = "";
