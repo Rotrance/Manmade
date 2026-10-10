@@ -14,10 +14,6 @@
 
   <main class="auth">
 
-    <a href="index.html" class="auth__back" aria-label="Voltar">
-      <img src="voltar.png" alt="" />
-    </a>
-
     <div class="auth__background" aria-hidden="true"></div>
     <div class="auth__overlay" aria-hidden="true"></div>
 
@@ -67,6 +63,18 @@
   </main>
 
   
+  <!-- Rede de segurança: se o JS do login não carregar, não deixa a página recarregar sem explicar -->
+  <script>
+    document.querySelector(".auth__form").addEventListener("submit", function (e) {
+      if (!window.__manmadeReady) {
+        e.preventDefault();
+        var m = document.getElementById("mensagem");
+        m.textContent = "O sistema de login não carregou. Atualize com Ctrl+Shift+R; se continuar, abra o console (F12) e veja a mensagem de erro.";
+        m.className = "auth__message auth__message--error";
+        m.hidden = false;
+      }
+    });
+  </script>
   <script type="module" src="auth-pages.js"></script>
 </body>
 </html>
