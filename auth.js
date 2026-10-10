@@ -3,6 +3,8 @@
  * O Firebase é carregado de forma "segura": se algo falhar (config errada,
  * biblioteca bloqueada...), a página continua funcionando e mostra o motivo.
  */
+import { validateName, validateEmail, validateEmailDomain, validatePassword } from "./validators.js";
+
 const FB = "https://www.gstatic.com/firebasejs/10.12.2/";
 
 let fb = {};
@@ -57,7 +59,8 @@ const MESSAGES = {
   "auth/missing-email": "Digite seu e-mail.",
   "auth/missing-password": "Digite sua senha.",
   "auth/email-already-in-use": "Já existe uma conta com esse e-mail.",
-  "auth/weak-password": "A senha deve ter pelo menos 6 caracteres.",
+  "auth/weak-password": "Senha fraca. Use pelo menos 8 caracteres com letras maiúsculas, minúsculas, número e símbolo.",
+  "auth/password-does-not-meet-requirements": "A senha não atende aos requisitos de segurança.",
   "auth/too-many-requests": "Muitas tentativas. Aguarde um pouco e tente novamente.",
   "auth/network-request-failed": "Sem conexão com a internet.",
   "auth/operation-not-allowed": "O login por e-mail/senha não está ativado no Firebase (Authentication → Método de login).",
@@ -68,7 +71,14 @@ const MESSAGES = {
   "auth/user-disabled": "Esta conta foi desativada."
 };
 
+function appError(code, message) {
+  const e = new Error(message);
+  e.code = code;
+  return e;
+}
+
 function friendly(err) {
+  if (err && String(err.code || "").startsWith("app/")) return err;
   const e = new Error(MESSAGES[err.code] || "Erro inesperado (" + (err.code || err.message) + "). Veja o console do navegador (F12).");
   e.code = err.code;
   if (!MESSAGES[err.code]) console.error(err);
@@ -140,25 +150,29 @@ export async function getDownloadUrl() {
 
 export async function register({ nome, email, senha }) {
   requireConfigured();
-  nome = String(nome || "").trim();
-  if (nome.length < 2) {
-    const e = new Error("Digite seu nome.");
-    e.code = "app/invalid-name";
-    throw e;
-  }
+
+  // Só cria a conta se nome, e-mail (formato + domínio existente) e senha forem válidos.
+  const n = validateName(nome);
+  if (!n.ok) throw appError("app/invalid-name", n.message);
+  const e = validateEmail(email);
+  if (!e.ok) throw appError("app/invalid-email", e.message);
+  const p = validatePassword(senha, { nome: n.value, email: e.value });
+  if (!p.ok) throw appError("app/weak-password", p.message);
+  const d = await validateEmailDomain(e.value);
+  if (!d.ok) throw appError("app/invalid-email", d.message);
 
   let user;
   try {
-    const cred = await fb.createUserWithEmailAndPassword(auth, String(email).trim(), senha);
+    const cred = await fb.createUserWithEmailAndPassword(auth, e.value, senha);
     user = cred.user;
-    await fb.updateProfile(user, { displayName: nome });
+    await fb.updateProfile(user, { displayName: n.value });
   } catch (err) {
     throw friendly(err);
   }
 
   // Perfil no Firestore, em segundo plano (não trava o cadastro se o banco não existir).
   fb.setDoc(fb.doc(db, "users", user.uid), {
-    nome,
+    nome: n.value,
     email: user.email,
     criadoEm: fb.serverTimestamp(),
     ultimoLogin: fb.serverTimestamp()
