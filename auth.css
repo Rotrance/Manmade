@@ -386,3 +386,70 @@
 a.auth__button {
   text-decoration: none;
 }
+
+/* FORÇA E CRITÉRIOS DA SENHA (CADASTRO) */
+
+.pw-meter {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.pw-meter__bar {
+  display: block;
+  width: 0;
+  height: 100%;
+  background-color: #dc5a50;
+  transition: width 0.25s ease, background-color 0.25s ease;
+}
+
+.pw-meter__bar[data-level="media"] { background-color: var(--amarelo); }
+.pw-meter__bar[data-level="forte"] { background-color: #8ccf63; }
+
+.pw-meter__label {
+  min-height: 14px;
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: #f0a79f;
+}
+
+.pw-meter__label[data-level="media"] { color: var(--amarelo-claro); }
+.pw-meter__label[data-level="forte"] { color: #b7e39a; }
+.pw-meter__label[data-level=""] { color: transparent; }
+
+.pw-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pw-rules li {
+  position: relative;
+  padding-left: 18px;
+  color: var(--cinza);
+  font-size: 11px;
+  line-height: 1.4;
+  transition: color 0.2s ease;
+}
+
+.pw-rules li::before {
+  content: "\2715";
+  position: absolute;
+  left: 0;
+  color: #dc5a50;
+  font-weight: 700;
+}
+
+.pw-rules li.is-ok {
+  color: #b7e39a;
+}
+
+.pw-rules li.is-ok::before {
+  content: "\2713";
+  color: #8ccf63;
+}
