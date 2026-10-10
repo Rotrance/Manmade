@@ -11,7 +11,7 @@ const HOME = "index.html";
 const LOGIN = "login.html?next=download";
 // Nomes aceitos para o arquivo do jogo, na pasta do site. O primeiro que existir é usado.
 const PREFIX = "";
-const ARQUIVOS = ["ManMade-v1.0.zip.rar", "ManMade-v1.0.rar", "ManMade-v1.0.zip"];
+const ARQUIVOS = ["ManMade-v1.0.zip.rar", "ManMade-v1.0.rar", "ManMade-v1.0.zip", "ManMade.rar", "ManMade.zip"];
 
 const content = document.getElementById("conteudo");
 let shown = false;
@@ -34,17 +34,32 @@ setTimeout(() => {
   }
 }, 10000);
 
-// Procura qual dos nomes existe no site. Ignora respostas que são páginas HTML (erro 404 disfarçado).
+// Confere se a URL é mesmo um arquivo (e não a página 404/HTML do site).
+// Tenta HEAD e, se o servidor não responder bem, um GET de 1 byte (Range).
+async function existe(url) {
+  const tentativas = [
+    { method: "HEAD" },
+    { method: "GET", headers: { Range: "bytes=0-0" } },
+  ];
+  for (const opts of tentativas) {
+    try {
+      const res = await fetch(url, { ...opts, cache: "no-store" });
+      const tipo = res.headers.get("content-type") || "";
+      if (res.body) res.body.cancel().catch(() => {});
+      if (res.ok && !tipo.includes("text/html")) return true;
+      if (res.status === 404) return false;
+    } catch (err) {
+      /* tenta o próximo método */
+    }
+  }
+  return false;
+}
+
+// Procura qual dos nomes existe na pasta do site. O primeiro que existir é usado.
 async function acharArquivo() {
   for (const nome of ARQUIVOS) {
     const url = PREFIX + nome;
-    try {
-      const res = await fetch(url, { method: "HEAD", cache: "no-store" });
-      const tipo = res.headers.get("content-type") || "";
-      if (res.ok && !tipo.includes("text/html")) return url;
-    } catch (err) {
-      /* tenta o próximo nome */
-    }
+    if (await existe(url)) return url;
   }
   console.warn("Arquivo do jogo não encontrado. Nomes procurados:", ARQUIVOS.map((n) => PREFIX + n));
   return null;
