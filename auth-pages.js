@@ -1,5 +1,6 @@
 /* Formulários de login e cadastro (usa auth.js). */
 import { getUser, register, login, resetPassword } from "./auth.js";
+import { validateName, validateEmail, validateEmailDomain, validatePassword, checkPassword } from "./validators.js";
 
 const HOME = "index.html";
 const form = document.querySelector(".auth__form");
@@ -8,6 +9,12 @@ const message = document.getElementById("mensagem");
 const button = form.querySelector("button[type=submit]");
 const next = new URLSearchParams(location.search).get("next");
 const destination = next === "download" ? "download.html" : HOME;
+
+function fail(code, text) {
+  const e = new Error(text);
+  e.code = code;
+  return e;
+}
 
 // quem já está logado não precisa ver estas páginas
 getUser().then((user) => {
@@ -26,8 +33,8 @@ function markInvalid(...ids) {
 }
 
 function fieldsFor(code) {
-  if (code === "auth/email-already-in-use" || code === "auth/invalid-email") return ["email"];
-  if (code === "auth/weak-password") return ["senha"];
+  if (code === "auth/email-already-in-use" || code === "auth/invalid-email" || code === "app/invalid-email") return ["email"];
+  if (code === "auth/weak-password" || code === "auth/password-does-not-meet-requirements" || code === "app/weak-password") return ["senha", "confirmar-senha"];
   if (code === "auth/invalid-credential" || code === "auth/user-not-found" || code === "auth/wrong-password") return ["email", "senha"];
   if (code === "app/invalid-name") return ["nome"];
   return [];
@@ -37,6 +44,42 @@ form.addEventListener("input", () => {
   message.hidden = true;
   markInvalid();
 });
+
+/* ---------- cadastro: lista de critérios da senha ao vivo ---------- */
+
+const rulesList = document.getElementById("pw-rules");
+const bar = document.getElementById("pw-bar");
+const label = document.getElementById("pw-label");
+
+function updateRules() {
+  if (!rulesList) return;
+  const ctx = { nome: form.nome?.value, email: form.email?.value };
+  const results = checkPassword(form.senha.value, ctx);
+
+  rulesList.replaceChildren(
+    ...results.map((r) => {
+      const li = document.createElement("li");
+      li.textContent = r.label;
+      li.className = r.ok ? "is-ok" : "";
+      return li;
+    })
+  );
+
+  const done = results.filter((r) => r.ok).length;
+  const typed = form.senha.value.length > 0;
+  const level = !typed ? "" : done === results.length ? "forte" : done >= results.length - 3 ? "media" : "fraca";
+  bar.style.width = typed ? Math.round((done / results.length) * 100) + "%" : "0";
+  bar.dataset.level = level;
+  label.textContent = { forte: "Senha forte", media: "Senha média: quase lá", fraca: "Senha fraca" }[level] || "";
+  label.dataset.level = level;
+}
+
+if (rulesList) {
+  ["input", "focus"].forEach((ev) => form.senha.addEventListener(ev, updateRules));
+  // nome e e-mail também entram nos critérios ("sem seu nome")
+  ["nome", "email"].forEach((id) => form[id].addEventListener("input", updateRules));
+  updateRules();
+}
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -48,11 +91,21 @@ form.addEventListener("submit", async (event) => {
 
   try {
     if (mode === "cadastro") {
+      // Só cria a conta se tudo for válido (o auth.js valida de novo por segurança).
+      const n = validateName(data.get("nome"));
+      if (!n.ok) throw fail("app/invalid-name", n.message);
+      const e = validateEmail(data.get("email"));
+      if (!e.ok) throw fail("app/invalid-email", e.message);
+      const p = validatePassword(data.get("senha"), { nome: n.value, email: e.value });
+      if (!p.ok) throw fail("app/weak-password", p.message);
       if (data.get("senha") !== data.get("confirmar-senha")) {
-        markInvalid("senha", "confirmar-senha");
-        throw new Error("As senhas não coincidem.");
+        throw fail("app/password-mismatch", "As senhas não coincidem.");
       }
-      await register({ nome: data.get("nome"), email: data.get("email"), senha: data.get("senha") });
+      show("Verificando o e-mail...", "info");
+      const d = await validateEmailDomain(e.value);
+      if (!d.ok) throw fail("app/invalid-email", d.message);
+
+      await register({ nome: n.value, email: e.value, senha: data.get("senha") });
       show("Conta criada! Redirecionando...", "success");
     } else {
       await login({ email: data.get("email"), senha: data.get("senha"), lembrar: data.get("lembrar") === "on" });
@@ -60,7 +113,7 @@ form.addEventListener("submit", async (event) => {
     }
     setTimeout(() => location.assign(destination), 600);
   } catch (err) {
-    markInvalid(...fieldsFor(err.code));
+    markInvalid(...(err.code === "app/password-mismatch" ? ["senha", "confirmar-senha"] : fieldsFor(err.code)));
     show(err.message, "error");
     button.disabled = false;
   }
@@ -89,3 +142,6 @@ if (next) {
     a.href += "?next=" + encodeURIComponent(next);
   });
 }
+
+// avisa a "rede de segurança" do HTML que o script carregou normalmente
+window.__manmadeReady = true;
