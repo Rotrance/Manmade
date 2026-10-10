@@ -1,37 +1,76 @@
-/* Página de download: só abre para usuários logados. */
-import { getUser, logout, userName } from "./auth.js";
+/*
+ * Página de download: só mostra o conteúdo para usuários logados.
+ * - Sem login (ou sem Firebase funcionando): vai para o login.
+ * - Se a pessoa sair da conta (inclusive em outra aba): é expulsa da página.
+ * - O link do instalador vem do Firestore (config/download), que só quem
+ *   está logado consegue ler. DOWNLOAD_URL abaixo é só um plano B.
+ */
+import { onUser, logout, userName, getDownloadUrl } from "./auth.js";
 
-// Coloque aqui o link do instalador quando existir (ex.: "downloads/ManMade.zip")
-const DOWNLOAD_URL = "";
+const HOME = "index.html";
+const LOGIN = "login.html?next=download";
+const DOWNLOAD_URL = ""; // plano B (ex.: "https://.../ManMade.zip")
 
-const user = await getUser();
+const content = document.getElementById("conteudo");
+let shown = false;
 
-if (!user) {
-  // sem login → vai para o login e volta para cá depois
-  location.replace("login.html?next=download");
-} else {
-  document.getElementById("nome-usuario").textContent = userName(user).split(" ")[0];
-  document.body.classList.remove("is-checking");
+// Voltar/avançar do navegador pode mostrar uma cópia antiga da página: recarrega.
+window.addEventListener("pageshow", (e) => {
+  if (e.persisted) location.reload();
+});
 
-  const info = document.getElementById("mensagem");
-  const baixar = document.getElementById("btn-baixar");
+// Se a verificação não responder, não deixa a pessoa travada.
+setTimeout(() => {
+  if (shown) return;
+  const status = document.getElementById("status");
+  if (status) {
+    status.textContent = "Não foi possível verificar seu acesso. ";
+    const a = document.createElement("a");
+    a.href = LOGIN;
+    a.textContent = "Ir para o login";
+    status.appendChild(a);
+  }
+}, 10000);
 
-  baixar.addEventListener("click", (e) => {
+function render(user) {
+  const node = document.getElementById("tpl-download").content.cloneNode(true);
+  node.querySelector("[data-nome]").textContent = userName(user).split(" ")[0];
+
+  const info = node.querySelector("[data-mensagem]");
+
+  node.querySelector("[data-baixar]").addEventListener("click", async (e) => {
     e.preventDefault();
-    if (!DOWNLOAD_URL) {
+    const url = (await getDownloadUrl()) || DOWNLOAD_URL;
+    if (!url) {
       info.textContent = "O arquivo do jogo ainda não foi publicado. Volte em breve!";
       info.hidden = false;
       return;
     }
     const a = document.createElement("a");
-    a.href = DOWNLOAD_URL;
+    a.href = url;
     a.download = "";
+    a.rel = "noopener";
+    document.body.appendChild(a);
     a.click();
+    a.remove();
   });
 
-  document.getElementById("btn-sair").addEventListener("click", async (e) => {
+  node.querySelector("[data-sair]").addEventListener("click", async (e) => {
     e.preventDefault();
     await logout();
-    location.assign("index.html");
+    location.assign(HOME);
   });
+
+  content.replaceChildren(node);
 }
+
+// Ouve o login o tempo todo: sem usuário → login.
+onUser((user) => {
+  if (!user) {
+    location.replace(LOGIN);
+    return;
+  }
+  if (shown) return;
+  shown = true;
+  render(user);
+});
