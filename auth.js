@@ -1,45 +1,53 @@
 /*
  * ManMade — autenticação com Firebase Authentication + perfil no Firestore.
- * Todas as páginas importam as funções daqui.
+ * O Firebase é carregado de forma "segura": se algo falhar (config errada,
+ * biblioteca bloqueada...), a página continua funcionando e mostra o motivo.
  */
-import { firebaseConfig, isConfigured } from "./firebase-config.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  updateProfile,
-  sendPasswordResetEmail,
-  setPersistence,
-  browserLocalPersistence,
-  browserSessionPersistence,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const FB = "https://www.gstatic.com/firebasejs/10.12.2/";
 
+let fb = {};
 let auth = null;
 let db = null;
+let isConfigured = false;
+let initError = null;
 
-if (isConfigured) {
-  try {
-    const app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
-  } catch (err) {
-    // Chave inválida etc.: o site continua abrindo, só o login fica indisponível.
-    console.error("Falha ao iniciar o Firebase. Confira os valores em firebase-config.js:", err);
-    auth = null;
-    db = null;
+try {
+  const cfg = await import("./firebase-config.js");
+  const firebaseConfig = cfg.firebaseConfig;
+  if (!firebaseConfig || typeof firebaseConfig !== "object") {
+    throw new Error('o arquivo firebase-config.js precisa conter: export const firebaseConfig = { ... }');
   }
+  isConfigured = !!firebaseConfig.apiKey && !String(firebaseConfig.apiKey).startsWith("COLE");
+
+  if (isConfigured) {
+    const [appM, authM, fsM] = await Promise.all([
+      import(FB + "firebase-app.js"),
+      import(FB + "firebase-auth.js"),
+      import(FB + "firebase-firestore.js")
+    ]);
+    fb = { ...authM, ...fsM };
+    const app = appM.initializeApp(firebaseConfig);
+    auth = authM.getAuth(app);
+    db = fsM.getFirestore(app);
+  }
+} catch (err) {
+  initError = err;
+  auth = null;
+  db = null;
+  console.error("Falha ao iniciar o Firebase:", err);
 }
 
-/* ---------- erros em português ---------- */
+/* ---------- estado / erros ---------- */
+
+// Texto explicando por que o login não está disponível (ou null se está tudo certo).
+export function authStatus() {
+  if (auth) return null;
+  if (initError) {
+    return "Não foi possível iniciar o Firebase: " + (initError.message || initError) +
+      ". Confira o arquivo firebase-config.js (veja o console, F12).";
+  }
+  return "Firebase ainda não configurado. Preencha o arquivo firebase-config.js.";
+}
 
 const MESSAGES = {
   "auth/invalid-credential": "E-mail ou senha incorretos.",
@@ -68,12 +76,9 @@ function friendly(err) {
 }
 
 function requireConfigured() {
-  if (!auth) {
-    const e = new Error(
-      isConfigured
-        ? "Não foi possível iniciar o Firebase. Confira os valores em firebase-config.js (veja o console, F12)."
-        : "Firebase ainda não configurado. Preencha firebase-config.js."
-    );
+  const problem = authStatus();
+  if (problem) {
+    const e = new Error(problem);
     e.code = "app/not-configured";
     throw e;
   }
@@ -87,7 +92,7 @@ export function onUser(callback) {
     queueMicrotask(() => callback(null));
     return () => {};
   }
-  return onAuthStateChanged(auth, callback);
+  return fb.onAuthStateChanged(auth, callback);
 }
 
 // Espera o Firebase restaurar a sessão e devolve o usuário (ou null).
@@ -116,6 +121,21 @@ export function initials(nome) {
   return (first + last).toUpperCase();
 }
 
+/* ---------- link do instalador (só para logados) ---------- */
+
+// Lê config/download no Firestore. As regras só deixam usuários logados lerem.
+export async function getDownloadUrl() {
+  if (!auth || !db) return null;
+  try {
+    const snap = await fb.getDoc(fb.doc(db, "config", "download"));
+    const url = snap.exists() ? snap.data().url : null;
+    return typeof url === "string" && url.startsWith("https://") ? url : null;
+  } catch (err) {
+    console.warn("Não foi possível ler config/download no Firestore.", err);
+    return null;
+  }
+}
+
 /* ---------- cadastro / login / logout ---------- */
 
 export async function register({ nome, email, senha }) {
@@ -129,21 +149,19 @@ export async function register({ nome, email, senha }) {
 
   let user;
   try {
-    const cred = await createUserWithEmailAndPassword(auth, String(email).trim(), senha);
+    const cred = await fb.createUserWithEmailAndPassword(auth, String(email).trim(), senha);
     user = cred.user;
-    await updateProfile(user, { displayName: nome });
+    await fb.updateProfile(user, { displayName: nome });
   } catch (err) {
     throw friendly(err);
   }
 
-  // Perfil no banco de dados (coleção "users"). Não bloqueia o cadastro se falhar.
-  // Sem 'await': se o Firestore não estiver criado/acessível, a promessa nunca
-  // termina e travaria a tela. O perfil é gravado em segundo plano.
-  setDoc(doc(db, "users", user.uid), {
+  // Perfil no Firestore, em segundo plano (não trava o cadastro se o banco não existir).
+  fb.setDoc(fb.doc(db, "users", user.uid), {
     nome,
     email: user.email,
-    criadoEm: serverTimestamp(),
-    ultimoLogin: serverTimestamp()
+    criadoEm: fb.serverTimestamp(),
+    ultimoLogin: fb.serverTimestamp()
   }).catch((err) =>
     console.warn("Conta criada, mas o perfil não foi salvo no Firestore. Confira se o banco foi criado e as regras publicadas.", err)
   );
@@ -153,12 +171,12 @@ export async function register({ nome, email, senha }) {
 export async function login({ email, senha, lembrar }) {
   requireConfigured();
   try {
-    await setPersistence(auth, lembrar ? browserLocalPersistence : browserSessionPersistence);
-    const cred = await signInWithEmailAndPassword(auth, String(email).trim(), senha);
+    await fb.setPersistence(auth, lembrar ? fb.browserLocalPersistence : fb.browserSessionPersistence);
+    const cred = await fb.signInWithEmailAndPassword(auth, String(email).trim(), senha);
 
-    setDoc(
-      doc(db, "users", cred.user.uid),
-      { nome: userName(cred.user), email: cred.user.email, ultimoLogin: serverTimestamp() },
+    fb.setDoc(
+      fb.doc(db, "users", cred.user.uid),
+      { nome: userName(cred.user), email: cred.user.email, ultimoLogin: fb.serverTimestamp() },
       { merge: true }
     ).catch((err) => console.warn("Não foi possível atualizar o perfil no Firestore.", err));
     return cred.user;
@@ -168,13 +186,13 @@ export async function login({ email, senha, lembrar }) {
 }
 
 export async function logout() {
-  if (auth) await signOut(auth);
+  if (auth) await fb.signOut(auth);
 }
 
 export async function resetPassword(email) {
   requireConfigured();
   try {
-    await sendPasswordResetEmail(auth, String(email).trim());
+    await fb.sendPasswordResetEmail(auth, String(email).trim());
   } catch (err) {
     throw friendly(err);
   }
