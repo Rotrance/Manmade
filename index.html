@@ -1,275 +1,76 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="checking">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="ManMade Studios — jogo de ambientação imersiva em diferentes épocas." />
   <title>ManMade</title>
-  <link rel="stylesheet" href="src/CSS/global.css" />
-  <link rel="stylesheet" href="src/CSS/home.css" />
+  <!-- Esconde a página até confirmar o login (home.js remove a classe "checking") -->
+  <style>html.checking body { visibility: hidden; }</style>
+  <link rel="stylesheet" href="global.css" />
+  <link rel="stylesheet" href="home.css" />
 </head>
 
 <body>
 
   <header class="site-header">
-    <nav class="site-nav" aria-label="Navegação principal">
-      <!-- CADASTRAR -->
-      <a
-        class="btn btn--filled btn--small"
-        href="src/paginas/cadastro.html"
-        aria-label="Cadastrar"
-      >
-        <span class="icon" aria-hidden="true">
-          <img src="src/assets/cadastro.png" alt="" />
-        </span>
-        Cadastrar
-      </a>
-
-      <!-- ENTRAR -->
-      <a
-        class="btn btn--outline btn--small"
-        href="src/paginas/login.html"
-        aria-label="Entrar"
-      >
-        <span class="icon" aria-hidden="true">
-          <img src="src/assets/login.png" alt="" />
-        </span>
-        Entrar
-      </a>
-    </nav>
+    <!-- Preenchido por home.js (Cadastrar/Entrar ou usuário logado) -->
+    <nav class="site-nav" id="site-nav" aria-label="Navegação principal"></nav>
   </header>
 
   <main>
 
     <section id="download" class="hero">
-      <!-- Imagem de fundo -->
-      <div
-        class="hero__photo"
-        aria-hidden="true"
-      ></div>
+      <div class="hero__photo" aria-hidden="true"></div>
+      <div class="hero__overlay" aria-hidden="true"></div>
 
-      <!-- Escurecimento da imagem -->
-      <div
-        class="hero__overlay"
-        aria-hidden="true"
-      ></div>
-
-      <!-- Conteúdo -->
       <div class="hero__content container">
-
         <div class="hero__brandline">
           <span>MANMADE STUDIOS</span>
         </div>
 
-        <h1>
-          Man<span>Made</span>
-        </h1>
+        <h1>Man<span>Made</span></h1>
 
         <p class="hero__subtitle">
           Um jogo de ambientação imersiva em<br />
           diferentes épocas.
         </p>
 
-        <!-- Download -->
-        <a
-          class="btn btn--filled btn--download"
-          href="#download"
-        >
+        <a id="btn-download" class="btn btn--filled btn--download" href="download.html">
           <span class="icon" aria-hidden="true">
-            <img src="src/assets/download.png" alt="" />
+            <img src="download.png" alt="" />
           </span>
           DOWNLOAD GRÁTIS
         </a>
       </div>
     </section>
 
-    <!-- SEÇÃO RANKING -->
-
-    <section id="ranking" class="ranking">
-      <div class="ranking__inner container">  
+    <section id="pesquisa" class="survey">
+      <div class="survey__inner container">
         <div class="section-kicker">
-          <span class="section-kicker__icon" aria-hidden="true">
-            <img src="src/assets/coroa.png" alt="imagem de uma coroa" />
-          </span>
-          <span>RANKING GLOBAL</span>
+          <span>SUA OPINIÃO</span>
         </div>
-        <h2>
-          Melhores Jogadores
-        </h2>
 
-        <p class="ranking__description">
-          Pontuação acumulada por exploração, sobrevivência e decisões no jogo.
+        <h2>Ajude a construir o ManMade</h2>
+
+        <p class="survey__description">
+          Responda ao nosso formulário e conte o que você achou do jogo.
+          Suas respostas ajudam a moldar as próximas atualizações.
         </p>
 
-        <!--  TABELA DO RANKING -->
-
-        <div
-          class="ranking-table"
-          role="table"
-          aria-label="Ranking global fictício"
+        <a
+          class="btn btn--filled btn--survey"
+          href="https://forms.gle/JHFngoNWLSseCXTH9"
+          target="_blank"
+          rel="noopener noreferrer"
         >
-
-          <!-- CABEÇALHO -->
-
-          <div
-            class="ranking-table__head"
-            role="row"
-          >
-            <span>#</span>
-            <span>JOGADOR</span>
-            <span>ÉPOCA</span>
-            <span>HORAS</span>
-            <span>PONTOS</span>
-          </div>
-
-          <!--  1º LUGAR -->
-
-          <div
-            class="ranking-row ranking-row--gold"
-            role="row"
-          >
-            <span class="ranking-position ranking-position--icon" aria-hidden="true">
-              <img
-                src="src/assets/1lugar.png" alt="primeiro lugar" />
-            </span>
-
-            <div class="player">
-              <span class="avatar avatar--orange">
-                NA
-              </span>
-              <strong>
-                Pedro
-              </strong>
-            </div>
-
-            <span class="era">
-              2ª Rev. Tecnológ...
-            </span>
-
-            <span class="hours">
-              3h30ms
-            </span>
-
-            <strong class="points">
-              <span aria-hidden="true">
-                <img src="src/assets/estrela.png" alt="imagem de uma estrela"/>
-              </span>
-              870.900
-            </strong>
-          </div>
-
-          <!-- 2º LUGAR -->
-
-          <div
-            class="ranking-row ranking-row--silver"
-            role="row"
-          >
-            <span class="ranking-position ranking-position--icon" aria-hidden="true" >
-              <img src="src/assets/2lugar.png" alt="segundo lugar" />
-            </span>
-            <div class="player">
-              <span class="avatar avatar--green">
-                FL
-              </span>
-              <strong>
-                Carlos
-              </strong>
-            </div>
-
-            <span class="era">
-              1ª Rev. Tecnológ...
-            </span>
-
-            <span class="hours">
-              2h
-            </span>
-
-            <strong class="points">
-              <span aria-hidden="true">
-                <img src="src/assets/estrela.png" alt="imagem de uma estrela"/>
-              </span>
-              640.400
-            </strong>
-          </div>
-
-          <!-- 3º LUGAR -->
-
-          <div
-            class="ranking-row ranking-row--bronze"
-            role="row"
-          >
-            <span class="ranking-position ranking-position--icon" aria-hidden="true">
-              <img src="src/assets/3lugar.png" alt="terceiro lugar"/>
-            </span>
-
-            <div class="player">
-              <span class="avatar avatar--lime">
-                TE
-              </span>
-              <strong>
-                Mateus
-              </strong>
-            </div>
-
-            <span class="era">
-              Pré-Tecnologia
-            </span>
-
-            <span class="hours">
-              1h15m
-            </span>
-
-            <strong class="points">
-              <span aria-hidden="true">
-                <img
-                  src="src/assets/estrela.png"
-                  alt=""
-                />
-              </span>
-              211.700
-            </strong>
-          </div>
-
-          <!--  4º LUGAR -->
-
-          <div
-            class="ranking-row"
-            role="row"
-          >
-            <span class="ranking-position">
-              4
-            </span>
-
-            <div class="player">
-              <span class="avatar avatar--teal">
-                SI
-              </span>
-              <strong>
-                Guilherme Souza
-              </strong>
-            </div>
-
-            <span class="era">
-              Pré-Tecnologia
-            </span>
-
-            <span class="hours">
-              1h
-            </span>
-
-            <strong class="points">
-              <span aria-hidden="true">
-                <img src="src/assets/estrela.png" alt="imagem de uma estrela"
-                />
-              </span>
-              98.320
-            </strong>
-          </div>
-
-        </div>
-
+          RESPONDER FORMULÁRIO
+          <span aria-hidden="true">→</span>
+        </a>
       </div>
     </section>
   </main>
+
+  <script type="module" src="home.js"></script>
 </body>
 </html>
