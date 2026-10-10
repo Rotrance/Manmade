@@ -9,7 +9,9 @@ import { onUser, logout, userName, getDownloadUrl } from "./auth.js";
 
 const HOME = "index.html";
 const LOGIN = "login.html?next=download";
-const DOWNLOAD_URL = "ManMade-v1.0.zip.rar"; // arquivo hospedado junto com o site (mesma pasta do projeto)
+// Nomes aceitos para o arquivo do jogo, na pasta do site. O primeiro que existir é usado.
+const PREFIX = "";
+const ARQUIVOS = ["ManMade-v1.0.zip.rar", "ManMade-v1.0.rar", "ManMade-v1.0.zip"];
 
 const content = document.getElementById("conteudo");
 let shown = false;
@@ -32,6 +34,22 @@ setTimeout(() => {
   }
 }, 10000);
 
+// Procura qual dos nomes existe no site. Ignora respostas que são páginas HTML (erro 404 disfarçado).
+async function acharArquivo() {
+  for (const nome of ARQUIVOS) {
+    const url = PREFIX + nome;
+    try {
+      const res = await fetch(url, { method: "HEAD", cache: "no-store" });
+      const tipo = res.headers.get("content-type") || "";
+      if (res.ok && !tipo.includes("text/html")) return url;
+    } catch (err) {
+      /* tenta o próximo nome */
+    }
+  }
+  console.warn("Arquivo do jogo não encontrado. Nomes procurados:", ARQUIVOS.map((n) => PREFIX + n));
+  return null;
+}
+
 function render(user) {
   const node = document.getElementById("tpl-download").content.cloneNode(true);
   node.querySelector("[data-nome]").textContent = userName(user).split(" ")[0];
@@ -40,24 +58,14 @@ function render(user) {
 
   node.querySelector("[data-baixar]").addEventListener("click", async (e) => {
     e.preventDefault();
-    const url = (await getDownloadUrl()) || DOWNLOAD_URL;
+    info.hidden = true;
+
+    // 1º link do Firestore (config/download); 2º arquivo hospedado no próprio site
+    const url = (await getDownloadUrl()) || (await acharArquivo());
     if (!url) {
-      info.textContent = "O arquivo do jogo ainda não foi publicado. Volte em breve!";
+      info.textContent = "O arquivo do jogo não foi encontrado no site. Volte em breve!";
       info.hidden = false;
       return;
-    }
-
-    // Arquivo do próprio site: confirma que ele existe antes de baixar
-    // (senão o navegador baixaria uma página de erro 404 no lugar do jogo).
-    if (!/^https?:\/\//.test(url)) {
-      try {
-        const res = await fetch(url, { method: "HEAD", cache: "no-store" });
-        if (!res.ok) throw new Error("HTTP " + res.status);
-      } catch (err) {
-        info.textContent = "O arquivo do jogo ainda não foi publicado. Volte em breve!";
-        info.hidden = false;
-        return;
-      }
     }
 
     const a = document.createElement("a");
