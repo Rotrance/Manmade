@@ -9,7 +9,7 @@ import { onUser, logout, userName, getDownloadUrl } from "./auth.js";
 
 const HOME = "index.html";
 const LOGIN = "login.html?next=download";
-const DOWNLOAD_URL = "ManMade-v1.0.zip"; // arquivo hospedado junto com o site (mesma pasta do projeto)
+const DOWNLOAD_URL = "ManMade-v1.0.zip.rar"; // arquivo hospedado junto com o site (mesma pasta do projeto)
 
 const content = document.getElementById("conteudo");
 let shown = false;
