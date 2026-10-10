@@ -124,45 +124,6 @@ export async function validateEmailDomain(email) {
 export const PASSWORD_MIN = 8;
 export const PASSWORD_MAX = 64;
 
-// palavras muito comuns; a senha é comparada só pelas letras (ignora números e símbolos)
-const COMMON_WORDS = new Set([
-  "senha", "password", "passw", "qwerty", "qwertyuiop", "asdfghjkl", "zxcvbnm", "admin", "administrador",
-  "brasil", "mudar", "manmade", "teste", "welcome", "letmein", "iloveyou", "abc", "abcdef", "abcdefgh",
-  "amor", "minhasenha", "senhaforte", "login", "usuario", "master", "dragon", "monkey", "football",
-  "flamengo", "corinthians", "palmeiras", "saopaulo", "gremio", "vasco"
-]);
-
-// senhas só de números/símbolos que aparecem em todas as listas de vazamentos
-const COMMON_EXACT = new Set([
-  "12345678", "123456789", "1234567890", "87654321", "11111111", "00000000", "12341234",
-  "123123123", "1q2w3e4r", "1q2w3e4r5t", "qwer1234", "abcd1234", "abc12345", "a1b2c3d4"
-]);
-
-const KEYBOARD_ROWS = ["qwertyuiop", "asdfghjkl", "zxcvbnm", "1234567890"];
-
-// 4 caracteres seguidos em sequência (1234, 4321, abcd, dcba) ou do teclado (qwer, asdf)
-function hasSequence(text) {
-  const t = plain(text);
-  for (let i = 0; i + 3 < t.length; i++) {
-    const chunk = t.slice(i, i + 4);
-    const codes = [...chunk].map((c) => c.charCodeAt(0));
-    const up = codes.every((c, k) => k === 0 || c === codes[k - 1] + 1);
-    const down = codes.every((c, k) => k === 0 || c === codes[k - 1] - 1);
-    if (up || down) return true;
-    if (KEYBOARD_ROWS.some((row) => row.includes(chunk) || [...row].reverse().join("").includes(chunk))) return true;
-  }
-  return false;
-}
-
-function isPredictable(senha) {
-  const p = plain(senha);
-  if (COMMON_EXACT.has(p)) return true;
-  const core = p.replace(/[^a-z]/g, "");
-  if (core && COMMON_WORDS.has(core)) return true;
-  if (/(.)\1\1/.test(p)) return true; // aaa, 111...
-  return hasSequence(p);
-}
-
 // a senha não pode conter o nome nem a parte do e-mail antes do @
 function hasPersonalInfo(senha, { nome, email } = {}) {
   const p = plain(senha);
@@ -181,8 +142,6 @@ export const PASSWORD_RULES = [
   { id: "digit", label: "Um número (0-9)", test: (s) => /\d/.test(s) },
   { id: "symbol", label: "Um símbolo (! @ # $ % & * ...)", test: (s) => /[^\p{L}\p{N}\s]/u.test(s) },
   { id: "spaces", label: "Sem espaços", test: (s) => s.length > 0 && !/\s/.test(s) },
-  { id: "pattern", label: "Sem sequências (1234, abcd, qwer), repetições (aaa) ou senhas comuns (senha123)",
-    test: (s) => s.length > 0 && !isPredictable(s) },
   { id: "personal", label: "Sem seu nome nem parte do seu e-mail",
     test: (s, ctx) => s.length > 0 && !hasPersonalInfo(s, ctx) }
 ];
