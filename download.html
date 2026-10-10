@@ -5,13 +5,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Download — ManMade Studios." />
+  <meta name="robots" content="noindex" />
   <title>Download</title>
   <link rel="stylesheet" href="global.css" />
   <link rel="stylesheet" href="auth.css" />
 </head>
 
-<!-- "is-checking" esconde o conteúdo até o login ser confirmado (download.js) -->
-<body class="is-checking">
+<body>
 
   <main class="auth">
 
@@ -22,33 +22,43 @@
     <div class="auth__background" aria-hidden="true"></div>
     <div class="auth__overlay" aria-hidden="true"></div>
 
-    <section class="auth__content">
+    <!-- Começa só com "verificando". O conteúdo real (template abaixo) só é
+         inserido por download.js depois que o login for confirmado. -->
+    <section class="auth__content" id="conteudo">
       <div class="auth__card">
-
         <div class="auth__header">
-          <span class="auth__kicker">ACESSO LIBERADO</span>
-          <h1>Download</h1>
-          <p>Olá, <strong id="nome-usuario"></strong>! Baixe o ManMade e comece sua jornada.</p>
+          <span class="auth__kicker">VERIFICANDO ACESSO</span>
+          <p id="status">Aguarde um instante...</p>
+          <noscript><p>Ative o JavaScript para acessar esta página.</p></noscript>
         </div>
-
-        <div class="auth__form">
-          <p id="mensagem" class="auth__message auth__message--info" role="status" hidden></p>
-
-          <a id="btn-baixar" class="auth__button btn btn--filled" href="#">
-            <span class="icon" aria-hidden="true">
-              <img src="download.png" alt="" />
-            </span>
-            Baixar jogo
-          </a>
-        </div>
-
-        <div class="auth__footer">
-          <a href="#" id="btn-sair">Sair da conta</a>
-        </div>
-
       </div>
     </section>
   </main>
+
+  <template id="tpl-download">
+    <div class="auth__card">
+      <div class="auth__header">
+        <span class="auth__kicker">ACESSO LIBERADO</span>
+        <h1>Download</h1>
+        <p>Olá, <strong data-nome></strong>! Baixe o ManMade e comece sua jornada.</p>
+      </div>
+
+      <div class="auth__form">
+        <p data-mensagem class="auth__message auth__message--info" role="status" hidden></p>
+
+        <a data-baixar class="auth__button btn btn--filled" href="#">
+          <span class="icon" aria-hidden="true">
+            <img src="download.png" alt="" />
+          </span>
+          Baixar jogo
+        </a>
+      </div>
+
+      <div class="auth__footer">
+        <a href="#" data-sair>Sair da conta</a>
+      </div>
+    </div>
+  </template>
 
   <script type="module" src="download.js"></script>
 </body>
